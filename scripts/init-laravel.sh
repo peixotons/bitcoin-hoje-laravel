@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "🚀 Inicializando Laravel..."
+echo "🚀 Inicializando SIGAC Sistema..."
 
 # Instalar dependências se não existirem
 if [ ! -d "vendor" ]; then
@@ -43,7 +43,7 @@ php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
-echo "✅ Laravel inicializado com sucesso!"
+echo "✅ SIGAC inicializado com sucesso!"
 
 # Iniciar PHP-FPM
 exec php-fpm 

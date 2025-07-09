@@ -1,10 +1,10 @@
 services:
-  # Serviço da aplicação Laravel
+  # Serviço da aplicação SIGAC
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: laravel-app
+    container_name: sigac-app
     restart: unless-stopped
     working_dir: /var/www
     volumes:
@@ -14,7 +14,7 @@ services:
       - app_vendor:/var/www/vendor
       - app_node_modules:/var/www/node_modules
     networks:
-      - app-network
+      - sigac-network
     depends_on:
       db:
         condition: service_healthy
@@ -24,7 +24,7 @@ services:
   # Servidor web Nginx
   nginx:
     image: nginx:alpine
-    container_name: laravel-nginx
+    container_name: sigac-nginx
     restart: unless-stopped
     ports:
       - "8000:80"
@@ -34,14 +34,14 @@ services:
       # Cache otimizado
       - nginx_cache:/var/cache/nginx
     networks:
-      - app-network
+      - sigac-network
     depends_on:
       - app
 
   # Banco de dados MySQL
   db:
     image: mysql
-    container_name: laravel-mysql
+    container_name: sigac-mysql
     restart: unless-stopped
     environment:
       MYSQL_DATABASE: ${DB_DATABASE}
@@ -52,7 +52,7 @@ services:
     ports:
       - "3307:3306"
     networks:
-      - app-network
+      - sigac-network
     healthcheck:
       test: ["CMD", "mysql", "-u", "root", "-psecret", "-e", "SELECT 1"]
       timeout: 20s
@@ -61,17 +61,17 @@ services:
   # Redis para cache e sessões
   redis:
     image: redis:alpine
-    container_name: laravel-redis
+    container_name: sigac-redis
     restart: unless-stopped
     ports:
       - "6380:6379"
     networks:
-      - app-network
+      - sigac-network
 
   # Node.js para compilar assets (React/TypeScript) - OTIMIZADO
   node:
     image: node:22-alpine
-    container_name: laravel-node
+    container_name: sigac-node
     working_dir: /var/www
     volumes:
       - ./:/var/www
@@ -81,7 +81,7 @@ services:
     ports:
       - "5173:5173"
     networks:
-      - app-network
+      - sigac-network
     environment:
       - NODE_ENV=development
       - CHOKIDAR_USEPOLLING=true
@@ -97,13 +97,13 @@ services:
   # MailHog para testes de email
   mailhog:
     image: mailhog/mailhog
-    container_name: laravel-mailhog
+    container_name: sigac-mailhog
     restart: unless-stopped
     ports:
       - "8025:8025"  # Interface web
       - "1025:1025"  # SMTP server
     networks:
-      - app-network
+      - sigac-network
 
 # Volumes persistentes OTIMIZADOS
 volumes:
@@ -118,5 +118,5 @@ volumes:
 
 # Rede interna para comunicação entre containers
 networks:
-  app-network:
+  sigac-network:
     driver: bridge 

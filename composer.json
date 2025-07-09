@@ -1,11 +1,13 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/react-starter-kit",
+    "name": "sigac/sistema-gestao",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
+    "description": "SIGAC - Sistema de Gestão De Credenciamento",
     "keywords": [
-        "laravel",
-        "framework"
+        "sigac",
+        "gestao",
+        "sistema",
+        "laravel"
     ],
     "license": "MIT",
     "require": {
