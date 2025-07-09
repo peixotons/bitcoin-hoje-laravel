@@ -1,8 +1,8 @@
 # Use PHP 8.2 FPM
 FROM php:8.2-fpm
 
-# Instalar dependências do sistema
-RUN apt-get update && apt-get install -y \
+# Instalar dependências do sistema e aplicar atualizações de segurança
+RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     git \
     curl \
     libpng-dev \
@@ -43,8 +43,8 @@ WORKDIR /var/www
 # Instalar dependências do Composer
 RUN composer install --no-dev --optimize-autoloader
 
-# Corrigir permissões do Laravel - PERMANENTEMENTE
-RUN chown -R www-data:www-data storage/ bootstrap/cache/
+# Corrigir permissões do Laravel - PERMANENTEMENTE (usando o usuário www criado)
+RUN chown -R www:www storage/ bootstrap/cache/
 RUN chmod -R 755 storage/ bootstrap/cache/
 
 # Expor porta 9000 e iniciar php-fpm
