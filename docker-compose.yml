@@ -54,7 +54,7 @@ services:
     networks:
       - sigac-network
     healthcheck:
-      test: ["CMD", "mysql", "-u", "root", "-psecret", "-e", "SELECT 1"]
+      test: ["CMD", "mysql", "-u", "root", "-p${DB_PASSWORD}", "-e", "SELECT 1"]
       timeout: 20s
       retries: 10
 
