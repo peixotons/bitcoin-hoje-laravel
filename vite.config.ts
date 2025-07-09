@@ -19,7 +19,8 @@ export default defineConfig({
     },
     resolve: {
         alias: {
-            'ziggy-js': resolve(__dirname, 'vendor/tightenco/ziggy'),
+            'ziggy-js': resolve('./vendor/tightenco/ziggy'),
+            '@': resolve('./resources/js'),
         },
     },
     server: {
@@ -30,18 +31,54 @@ export default defineConfig({
             host: 'localhost',
         },
         watch: {
-            usePolling: true,
-            interval: 1000,
+            // Disable polling for better performance
+            usePolling: false,
+            // Ignore files that don't need watching
             ignored: [
                 '**/node_modules/**',
                 '**/vendor/**',
                 '**/storage/**',
+                '**/public/build/**',
+                '**/.git/**',
             ]
         },
         cors: true,
     },
+    build: {
+        // Build optimizations
+        target: 'es2020',
+        minify: 'terser',
+        terserOptions: {
+            compress: {
+                drop_console: true,
+                drop_debugger: true,
+            },
+        },
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    'react-vendor': ['react', 'react-dom'],
+                    'inertia-vendor': ['@inertiajs/react'],
+                    'ui-vendor': ['@headlessui/react', '@radix-ui/react-slot'],
+                },
+            },
+        },
+        // Enable CSS code splitting
+        cssCodeSplit: true,
+        // Generate source maps only for development
+        sourcemap: false,
+        // Chunk size warnings
+        chunkSizeWarningLimit: 1000,
+    },
     optimizeDeps: {
-        include: ['react', 'react-dom', '@inertiajs/react'],
+        include: [
+            'react',
+            'react-dom',
+            '@inertiajs/react',
+            '@headlessui/react',
+            'lucide-react',
+        ],
+        exclude: ['@tailwindcss/vite'],
     },
     clearScreen: false,
 });

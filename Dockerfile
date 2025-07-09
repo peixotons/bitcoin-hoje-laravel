@@ -1,7 +1,15 @@
-# Use PHP 8.2 FPM
+# Multi-stage build for optimized caching and smaller final image
+
+# Stage 1: Composer dependencies
+FROM composer:latest AS composer-stage
+WORKDIR /app
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-scripts --no-autoloader --optimize-autoloader --ignore-platform-reqs
+
+# Stage 2: Final PHP image
 FROM php:8.2-fpm
 
-# Instalar dependências do sistema
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -11,42 +19,49 @@ RUN apt-get update && apt-get install -y \
     libicu-dev \
     libzip-dev \
     zip \
-    unzip
+    unzip \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-# Limpar cache
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+# Install PHP extensions including Redis
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip intl \
+    && pecl install redis apcu \
+    && docker-php-ext-enable redis apcu
 
-# Instalar extensões PHP incluindo Redis
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip intl
+# Copy OPcache configuration
+COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
+COPY docker/php/local.ini /usr/local/etc/php/conf.d/local.ini
 
-# Instalar Redis extension via PECL
-RUN pecl install redis && docker-php-ext-enable redis
+# Create user for Laravel application
+RUN groupadd -g 1000 www \
+    && useradd -u 1000 -ms /bin/bash -g www www
 
-# Obter o Composer
+# Set working directory
+WORKDIR /var/www
+
+# Copy composer binary from composer stage
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Criar usuário para a aplicação Laravel
-RUN groupadd -g 1000 www
-RUN useradd -u 1000 -ms /bin/bash -g www www
+# Copy vendor directory from composer stage
+COPY --from=composer-stage /app/vendor ./vendor
 
-# Copiar código da aplicação
-COPY . /var/www
-COPY --chown=www:www . /var/www
+# Copy application code with correct ownership
+COPY --chown=www:www . .
 
-# Copiar script de inicialização
+# Copy and set permissions for initialization script
 COPY --chown=www:www scripts/init-laravel.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/init-laravel.sh
 
-# Definir diretório de trabalho
-WORKDIR /var/www
+# Generate optimized autoloader
+RUN composer dump-autoload --optimize --no-dev
 
-# Instalar dependências do Composer
-RUN composer install --no-dev --optimize-autoloader
+# Set permanent permissions for storage and cache
+RUN chown -R www-data:www-data storage/ bootstrap/cache/ \
+    && chmod -R 755 storage/ bootstrap/cache/
 
-# Corrigir permissões do Laravel - PERMANENTEMENTE
-RUN chown -R www-data:www-data storage/ bootstrap/cache/
-RUN chmod -R 755 storage/ bootstrap/cache/
+# Switch to non-root user
+USER www
 
-# Expor porta 9000 e iniciar php-fpm
+# Expose port 9000 and start php-fpm
 EXPOSE 9000
 CMD ["/usr/local/bin/init-laravel.sh"] 

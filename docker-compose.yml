@@ -54,7 +54,7 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "mysql", "-u", "root", "-psecret", "-e", "SELECT 1"]
+      test: ["CMD", "mysql", "-u", "root", "-p${DB_PASSWORD}", "-e", "SELECT 1"]
       timeout: 20s
       retries: 10
 
@@ -65,6 +65,9 @@ services:
     restart: unless-stopped
     ports:
       - "6380:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     networks:
       - app-network
 
@@ -114,6 +117,8 @@ volumes:
   app_node_modules:
     driver: local
   nginx_cache:
+    driver: local
+  redis_data:
     driver: local
 
 # Rede interna para comunicação entre containers
