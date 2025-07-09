@@ -22,4 +22,26 @@ export default defineConfig({
             'ziggy-js': resolve(__dirname, 'vendor/tightenco/ziggy'),
         },
     },
+    server: {
+        host: '0.0.0.0',
+        port: 5173,
+        hmr: {
+            port: 5173,
+            host: 'localhost',
+        },
+        watch: {
+            usePolling: true,
+            interval: 1000,
+            ignored: [
+                '**/node_modules/**',
+                '**/vendor/**',
+                '**/storage/**',
+            ]
+        },
+        cors: true,
+    },
+    optimizeDeps: {
+        include: ['react', 'react-dom', '@inertiajs/react'],
+    },
+    clearScreen: false,
 });

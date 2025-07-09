@@ -10,11 +10,16 @@ services:
     volumes:
       - ./:/var/www
       - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+      # Volumes otimizados para evitar sync de arquivos desnecessários
+      - app_vendor:/var/www/vendor
+      - app_node_modules:/var/www/node_modules
     networks:
       - app-network
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
 
   # Servidor web Nginx
   nginx:
@@ -26,6 +31,8 @@ services:
     volumes:
       - ./:/var/www
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+      # Cache otimizado
+      - nginx_cache:/var/cache/nginx
     networks:
       - app-network
     depends_on:
@@ -39,8 +46,6 @@ services:
     environment:
       MYSQL_DATABASE: ${DB_DATABASE}
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
-      MYSQL_USER: ${DB_USERNAME}
     volumes:
       - dbdata:/var/lib/mysql
       - ./docker/mysql/my.cnf:/etc/mysql/my.cnf
@@ -48,6 +53,10 @@ services:
       - "3307:3306"
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "mysql", "-u", "root", "-psecret", "-e", "SELECT 1"]
+      timeout: 20s
+      retries: 10
 
   # Redis para cache e sessões
   redis:
@@ -59,22 +68,52 @@ services:
     networks:
       - app-network
 
-  # Node.js para compilar assets (React/TypeScript)
+  # Node.js para compilar assets (React/TypeScript) - OTIMIZADO
   node:
     image: node:22-alpine
     container_name: laravel-node
     working_dir: /var/www
     volumes:
       - ./:/var/www
-    command: sh -c "npm install && npm run dev"
+      # Volume otimizado para node_modules
+      - app_node_modules:/var/www/node_modules
+    command: sh -c "npm install --prefer-offline --no-audit --progress=false && npm run dev"
     ports:
       - "5173:5173"
     networks:
       - app-network
+    environment:
+      - NODE_ENV=development
+      - CHOKIDAR_USEPOLLING=true
+      - CHOKIDAR_INTERVAL=1000
+    # Limites de recursos para evitar uso excessivo
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
 
-# Volumes persistentes
+  # MailHog para testes de email
+  mailhog:
+    image: mailhog/mailhog
+    container_name: laravel-mailhog
+    restart: unless-stopped
+    ports:
+      - "8025:8025"  # Interface web
+      - "1025:1025"  # SMTP server
+    networks:
+      - app-network
+
+# Volumes persistentes OTIMIZADOS
 volumes:
   dbdata:
+    driver: local
+  app_vendor:
+    driver: local
+  app_node_modules:
+    driver: local
+  nginx_cache:
     driver: local
 
 # Rede interna para comunicação entre containers
