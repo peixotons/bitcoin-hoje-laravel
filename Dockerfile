@@ -1,8 +1,8 @@
 # Use PHP 8.2 FPM
 FROM php:8.2-fpm
 
-# Instalar dependências do sistema
-RUN apt-get update && apt-get install -y \
+# Instalar dependências do sistema e aplicar atualizações de segurança
+RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     git \
     curl \
     libpng-dev \
@@ -25,16 +25,12 @@ RUN pecl install redis && docker-php-ext-enable redis
 # Obter o Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Criar usuário para a aplicação Laravel
-RUN groupadd -g 1000 www
-RUN useradd -u 1000 -ms /bin/bash -g www www
-
 # Copiar código da aplicação
 COPY . /var/www
-COPY --chown=www:www . /var/www
+COPY --chown=www-data:www-data . /var/www
 
 # Copiar script de inicialização
-COPY --chown=www:www scripts/init-laravel.sh /usr/local/bin/
+COPY --chown=www-data:www-data scripts/init-laravel.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/init-laravel.sh
 
 # Definir diretório de trabalho
@@ -43,7 +39,7 @@ WORKDIR /var/www
 # Instalar dependências do Composer
 RUN composer install --no-dev --optimize-autoloader
 
-# Corrigir permissões do Laravel - PERMANENTEMENTE
+# Corrigir permissões do Laravel - PERMANENTEMENTE (usando o usuário www-data padrão do PHP-FPM)
 RUN chown -R www-data:www-data storage/ bootstrap/cache/
 RUN chmod -R 755 storage/ bootstrap/cache/
 
