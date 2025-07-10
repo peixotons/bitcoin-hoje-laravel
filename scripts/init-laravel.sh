@@ -52,22 +52,17 @@ fi
 
 # Criar tabelas de sessão se não existirem (com verificação adequada)
 echo "📝 Verificando tabela de sessões..."
-# Primeiro verifica se o comando migrate:status funciona
-if php artisan migrate:status >/dev/null 2>&1; then
-    # Se funciona, verifica se a migration de sessions foi aplicada (status: Ran)
-    if ! php artisan migrate:status 2>/dev/null | grep -E "sessions.*Ran" >/dev/null; then
-        # Verifica se o arquivo de migration de sessions existe
-        if ! ls database/migrations/*_create_sessions_table.php >/dev/null 2>&1; then
-            echo "📝 Criando migration de sessões..."
-            php artisan session:table
-        fi
-        echo "📝 Aplicando migration de sessões..."
-        php artisan migrate
-    else
-        echo "✓ Tabela de sessões já existe"
-    fi
+# Verifica se a tabela sessions já existe no banco de dados
+if php artisan tinker --execute="echo (Schema::hasTable('sessions') ? 'exists' : 'missing');" 2>/dev/null | grep -q "exists"; then
+    echo "✓ Tabela de sessões já existe"
 else
-    echo "⚠️  Não foi possível verificar status das migrations, pulando criação de tabela de sessões"
+    # Verifica se o arquivo de migration de sessions existe
+    if ! ls database/migrations/*_create_sessions_table.php >/dev/null 2>&1; then
+        echo "📝 Criando migration de sessões..."
+        php artisan session:table
+    fi
+    echo "📝 Aplicando migration de sessões..."
+    php artisan migrate
 fi
 
 # Limpar e cachear configurações verificando cada cache individualmente
