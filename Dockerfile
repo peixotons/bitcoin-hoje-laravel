@@ -11,7 +11,8 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     libicu-dev \
     libzip-dev \
     zip \
-    unzip
+    unzip \
+    default-mysql-client
 
 # Limpar cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*

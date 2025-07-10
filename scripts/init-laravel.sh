@@ -15,16 +15,62 @@ if [ ! -f ".env" ]; then
     cp .env.example .env
 fi
 
-# Gerar chave se não existir
-if ! grep -q "APP_KEY=" .env || [ "$(grep APP_KEY= .env | cut -d'=' -f2)" = "" ]; then
-    echo "🔑 Gerando chave da aplicação..."
-    php artisan key:generate
+# CONTRAMEDIDA 1: Garantir que APP_KEY seja gerado automaticamente
+echo "🔑 Verificando chave da aplicação..."
+if ! grep -q "APP_KEY=" .env; then
+    echo "🔑 Adicionando linha APP_KEY no .env..."
+    echo "APP_KEY=" >> .env
 fi
 
-# Aguardar banco estar disponível
-echo "🔍 Aguardando banco de dados..."
+# Verificar se APP_KEY está vazio e gerar se necessário
+if [ "$(grep APP_KEY= .env | cut -d'=' -f2)" = "" ]; then
+    echo "🔑 Gerando nova chave da aplicação..."
+    # Gerar chave manualmente se php artisan key:generate falhar
+    if ! php artisan key:generate; then
+        echo "🔑 Método alternativo: gerando chave manualmente..."
+        NEW_KEY=$(php artisan key:generate --show)
+        sed -i "s/APP_KEY=/APP_KEY=$NEW_KEY/" .env
+        echo "✅ Chave da aplicação gerada: $NEW_KEY"
+    fi
+else
+    echo "✓ Chave da aplicação já existe"
+fi
+
+# CONTRAMEDIDA 2: Aguardar MySQL estar disponível e criar banco se necessário
+echo "🔍 Aguardando MySQL estar disponível..."
+max_attempts=30
+attempts=0
+
+while [ $attempts -lt $max_attempts ]; do
+    if mysql -h${DB_HOST} -u${DB_USERNAME} -p${DB_PASSWORD} -e "SELECT 1" >/dev/null 2>&1; then
+        echo "✅ MySQL está disponível!"
+        break
+    else
+        echo "⏳ Aguardando MySQL... (tentativa $((attempts + 1))/$max_attempts)"
+        sleep 2
+        attempts=$((attempts + 1))
+    fi
+done
+
+if [ $attempts -eq $max_attempts ]; then
+    echo "❌ Erro: MySQL não ficou disponível após $max_attempts tentativas"
+    exit 1
+fi
+
+# CONTRAMEDIDA 3: Criar banco de dados se não existir
+echo "🗄️  Verificando se banco de dados existe..."
+if ! mysql -h${DB_HOST} -u${DB_USERNAME} -p${DB_PASSWORD} -e "USE ${DB_DATABASE};" >/dev/null 2>&1; then
+    echo "🗄️  Criando banco de dados ${DB_DATABASE}..."
+    mysql -h${DB_HOST} -u${DB_USERNAME} -p${DB_PASSWORD} -e "CREATE DATABASE IF NOT EXISTS ${DB_DATABASE};"
+    echo "✅ Banco de dados ${DB_DATABASE} criado com sucesso!"
+else
+    echo "✓ Banco de dados ${DB_DATABASE} já existe"
+fi
+
+# Aguardar Laravel conseguir conectar no banco
+echo "🔍 Aguardando Laravel conectar no banco..."
 while ! php artisan db:show >/dev/null 2>&1; do
-    echo "⏳ Aguardando conexão com MySQL..."
+    echo "⏳ Aguardando conexão com banco de dados..."
     sleep 2
 done
 
