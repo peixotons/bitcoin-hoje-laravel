@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "🚀 Inicializando SIGAC Sistema..."
+echo "🚀 Inicializando Bitcoin Hoje Sistema..."
 
 # Instalar dependências se não existirem
 if [ ! -d "vendor" ]; then
@@ -138,7 +138,7 @@ else
     echo "✓ Cache de views já existe"
 fi
 
-echo "✅ SIGAC inicializado com sucesso!"
+echo "✅ Bitcoin Hoje inicializado com sucesso!"
 
 # Iniciar PHP-FPM
 exec php-fpm 

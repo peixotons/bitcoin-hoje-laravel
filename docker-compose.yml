@@ -1,10 +1,10 @@
 services:
-  # Serviço da aplicação SIGAC
+  # Serviço da aplicação Bitcoin Hoje
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: sigac-app
+    container_name: bitcoin-hoje-app
     restart: unless-stopped
     working_dir: /var/www
     volumes:
@@ -23,7 +23,7 @@ services:
       - APP_ENV=${APP_ENV}
       - APP_DEBUG=${APP_DEBUG}
     networks:
-      - sigac-network
+      - bitcoin-hoje-network
     depends_on:
       db:
         condition: service_healthy
@@ -33,7 +33,7 @@ services:
   # Servidor web Nginx
   nginx:
     image: nginx:alpine
-    container_name: sigac-nginx
+    container_name: bitcoin-hoje-nginx
     restart: unless-stopped
     ports:
       - "8000:80"
@@ -43,14 +43,14 @@ services:
       # Cache otimizado
       - nginx_cache:/var/cache/nginx
     networks:
-      - sigac-network
+      - bitcoin-hoje-network
     depends_on:
       - app
 
   # Banco de dados MySQL
   db:
     image: mysql
-    container_name: sigac-mysql
+    container_name: bitcoin-hoje-mysql
     restart: unless-stopped
     environment:
       MYSQL_DATABASE: ${DB_DATABASE}
@@ -62,7 +62,7 @@ services:
     ports:
       - "3307:3306"
     networks:
-      - sigac-network
+      - bitcoin-hoje-network
     healthcheck:
       test: ["CMD", "mysql", "-u", "root", "-p${DB_PASSWORD}", "-e", "SELECT 1"]
       timeout: 20s
@@ -71,17 +71,17 @@ services:
   # Redis para cache e sessões
   redis:
     image: redis:alpine
-    container_name: sigac-redis
+    container_name: bitcoin-hoje-redis
     restart: unless-stopped
     ports:
       - "6380:6379"
     networks:
-      - sigac-network
+      - bitcoin-hoje-network
 
   # Node.js para compilar assets (React/TypeScript) - OTIMIZADO
   node:
     image: node:22-alpine
-    container_name: sigac-node
+    container_name: bitcoin-hoje-node
     working_dir: /var/www
     volumes:
       - ./:/var/www
@@ -91,7 +91,7 @@ services:
     ports:
       - "5173:5173"
     networks:
-      - sigac-network
+      - bitcoin-hoje-network
     environment:
       - NODE_ENV=development
       - CHOKIDAR_USEPOLLING=true
@@ -107,13 +107,13 @@ services:
   # MailHog para testes de email
   mailhog:
     image: mailhog/mailhog
-    container_name: sigac-mailhog
+    container_name: bitcoin-hoje-mailhog
     restart: unless-stopped
     ports:
       - "8025:8025"  # Interface web
       - "1025:1025"  # SMTP server
     networks:
-      - sigac-network
+      - bitcoin-hoje-network
 
 # Volumes persistentes OTIMIZADOS
 volumes:
@@ -128,5 +128,5 @@ volumes:
 
 # Rede interna para comunicação entre containers
 networks:
-  sigac-network:
+  bitcoin-hoje-network:
     driver: bridge 

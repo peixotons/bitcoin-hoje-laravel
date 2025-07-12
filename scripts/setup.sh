@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "🚀 SIGAC - Script de Setup Automatizado"
+echo "🚀 Bitcoin Hoje - Setup Automatizado"
 echo "========================================"
 
 # Verificar se Docker está instalado

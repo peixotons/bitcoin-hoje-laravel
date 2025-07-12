@@ -1,10 +1,10 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "sigac/sistema-gestao",
+    "name": "bitcoin-hoje",
     "type": "project",
-    "description": "SIGAC - Sistema de Gestão De Credenciamento",
+    "description": "Bitcoin Hoje - Sistema de Informações sobre Bitcoin",
     "keywords": [
-        "sigac",
+        "bitcoin-hoje",
         "gestao",
         "sistema",
         "laravel"
