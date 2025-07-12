@@ -1,6 +1,6 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "bitcoin-hoje",
+    "name": "bitcoin-hoje/bitcoin-hoje",
     "type": "project",
     "description": "Bitcoin Hoje - Sistema de Informações sobre Bitcoin",
     "keywords": [
